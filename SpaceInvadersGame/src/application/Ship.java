@@ -8,16 +8,15 @@ import javafx.scene.image.ImageView;
 
 public class Ship extends ImageView {
 
-	private int speed;
+	private double speed;
 	
 	
-	public Ship(int startX, int startY, int speed, String imageURL) throws FileNotFoundException {
-		
+	public Ship(double startX, double startY, double speed, String imageURL) throws FileNotFoundException {
 		super(new Image(new FileInputStream(imageURL)));
 		this.speed = speed;
 		setX(startX);
 		setY(startY);
-		setFitWidth(50);
+		setFitWidth(35);
 		setPreserveRatio(true);
 	}
 	
