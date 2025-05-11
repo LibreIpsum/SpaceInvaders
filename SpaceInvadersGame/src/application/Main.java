@@ -3,7 +3,6 @@ package application;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Random;
 
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -13,6 +12,9 @@ import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -20,9 +22,16 @@ import javafx.util.Duration;
 public class Main extends Application {
 	
 	int appWidth = 800;
+	Group root;
+	Group endScreen;
+	Scene gameOver;
+	boolean isOver = false;
 	
 	ArrayList<String> input = new ArrayList<String>();
 	
+	KeyFrame gameFrame;
+	
+	Player player;
 	
 	ArrayList<Laser> playerLasers = new ArrayList<Laser>();
 	int laserCooldown = 30;
@@ -38,19 +47,28 @@ public class Main extends Application {
 	
 	
 	ArrayList<Laser> enemyLasers = new ArrayList<Laser>();
-	int EnemyPercentFireRate = 2;
-//	int cooldownFrame = 0;
+	double EnemyPercentFireRate = 2;	
+	
+	
+	
 	
 	@Override
 	public void start(Stage stage) {
 		try {
+			
+			// game over scene
+			endScreen = new Group();
+			gameOver = new Scene(endScreen, appWidth, appWidth, Color.GRAY);
+			
+			
+			
 			// main group and scene
-			Group root = new Group();
+			root = new Group();
 			Scene scene = new Scene(root, appWidth, appWidth, Color.rgb(0, 0,	15));
 			
 			
 			// create a player ship
-			Player player = new Player(scene.getWidth()/2, scene.getHeight()-100);		
+			player = new Player(scene.getWidth()/2, scene.getHeight()-100);		
 			root.getChildren().add(player);
 			
 			
@@ -75,7 +93,7 @@ public class Main extends Application {
 			stage.setScene(scene);
 			stage.show();
 			
-			initializeGameLoop(root, player, playerLasers, enemies);
+			initializeGameLoop(stage);
 			
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -84,12 +102,12 @@ public class Main extends Application {
 	
 	
 
-	private void initializeGameLoop(Group root, Player player, ArrayList<Laser> playaerLasers, ArrayList<Enemy> enemies) {
+	private void initializeGameLoop(Stage stage) {
         // Set up the game loop with 60 FPS (16.67 milliseconds per frame)
         Duration frameDuration = Duration.millis(16.67);
-        KeyFrame gameFrame = new KeyFrame(frameDuration, event -> {
+        gameFrame = new KeyFrame(frameDuration, event -> {
 			try {
-				updateGame(root, player, playaerLasers, enemies);
+				updateGame(stage);
 			} catch (FileNotFoundException e) {
 				System.out.println(e.getMessage());
 				e.printStackTrace();
@@ -104,9 +122,14 @@ public class Main extends Application {
 	
 	
 
-    private void updateGame(Group root, Player player, ArrayList<Laser> playerLasers, ArrayList<Enemy> enemies) throws FileNotFoundException {
+    private void updateGame(Stage stage) throws FileNotFoundException {
         // counters
     	cooldownFrame-=1;
+    	
+    	// exit if finished
+    	if (isOver) {
+    		return;
+    	}
     	
     	
     	// player inputs
@@ -192,11 +215,15 @@ public class Main extends Application {
         for (int j=0; j<enemyLasers.size();j++) {
     		Laser laser = enemyLasers.get(j);
     		if (laser.getBoundsInParent().intersects(player.getBoundsInParent())) {
-    			enemyLasers.remove(j);
-    			root.getChildren().remove(laser);
-    			root.getChildren().remove(player);
+    			endGame(stage, "You Lost.");
     		}
     	}
+        
+        // game over, player wins
+        if (enemies.isEmpty()) {
+        	endGame(stage, "You Won!");
+			
+        }
         
         
     }
@@ -215,6 +242,18 @@ public class Main extends Application {
     private void handleKeyReleased(KeyEvent event) {
 		input.remove(event.getCode().toString());
 	}
+    
+    private void endGame(Stage stage, String text) {
+    	Text endText = new Text(text);
+    	endText.setFont(new Font(50));
+		endText.setTextAlignment(TextAlignment.CENTER);
+		endText.setX((appWidth/2)-(endText.getBoundsInParent().getWidth()/2));
+		endText.setY((appWidth/2)-(endText.getBoundsInParent().getHeight()/2));
+		
+		endScreen.getChildren().add(endText);
+		stage.setScene(gameOver);
+		isOver = true;
+    }
 	
 	
 	public static void main(String[] args) {
