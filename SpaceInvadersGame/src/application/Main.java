@@ -1,6 +1,7 @@
 package application;
 
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
 import javafx.animation.Animation;
@@ -19,7 +20,9 @@ public class Main extends Application {
 	
 	ArrayList<String> input = new ArrayList<String>();
 	
-	ArrayList<Laser> lasers = new ArrayList<Laser>();
+	int laserCooldown = 30;
+	int cooldownFrame = 0;
+	ArrayList<Laser> playerLasers = new ArrayList<Laser>();
 	
 	@Override
 	public void start(Stage stage) {
@@ -29,16 +32,11 @@ public class Main extends Application {
 			Scene scene = new Scene(root, 800, 800, Color.BLACK);
 			
 			
-			// create a test ship
+			// create a player ship
 			Player player = new Player(scene.getWidth()/2, scene.getHeight()-100);		
 			root.getChildren().add(player);
 			
-			// create a test laser
-			Laser laser = new Laser(player.getX(), player.getY(), 10);
-			lasers.add(laser);
-			root.getChildren().add(laser);
-			
-			
+
 			// event handling
 			scene.setOnKeyPressed(event -> handleKeyPress(event));
 			scene.setOnKeyReleased(event -> handleKeyReleased(event));
@@ -48,7 +46,7 @@ public class Main extends Application {
 			stage.setScene(scene);
 			stage.show();
 			
-			initializeGameLoop(root, player, lasers);
+			initializeGameLoop(root, player, playerLasers);
 			
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -60,7 +58,14 @@ public class Main extends Application {
 	private void initializeGameLoop(Group root, Player player, ArrayList<Laser> lasers) {
         // Set up the game loop with 60 FPS (16.67 milliseconds per frame)
         Duration frameDuration = Duration.millis(16.67);
-        KeyFrame gameFrame = new KeyFrame(frameDuration, event -> updateGame(root, player, lasers));
+        KeyFrame gameFrame = new KeyFrame(frameDuration, event -> {
+			try {
+				updateGame(root, player, lasers);
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		});
         Timeline gameLoop = new Timeline(gameFrame);
         gameLoop.setCycleCount(Animation.INDEFINITE);
 
@@ -68,15 +73,29 @@ public class Main extends Application {
         gameLoop.play();
     }
 
-    private void updateGame(Group root, Player player, ArrayList<Laser> lasers) {
-        // player inputs
+    private void updateGame(Group root, Player player, ArrayList<Laser> lasers) throws FileNotFoundException {
+        // counters
+    	cooldownFrame-=1;
+    	
+    	
+    	// player inputs
     	if (input.contains("LEFT")) {
         	player.moveLeft();
         }
         if (input.contains("RIGHT")) {
         	player.moveRight();
         }
-        // TODO: add laser firing
+        // laser firing
+        if (input.contains("SPACE")) {
+        	if (cooldownFrame <= 0) {
+        		Laser laser = new Laser(player.getX(), player.getY(), 10);
+    			lasers.add(laser);
+    			root.getChildren().add(laser);
+    			cooldownFrame = laserCooldown;
+        	}
+        	
+        }
+        
         
         // Laser movement
         for (int i=0;i<lasers.size();i++) {
