@@ -134,10 +134,14 @@ public class Main extends Application {
     	
     	// player inputs
     	if (input.contains("LEFT")) {
-        	player.moveLeft();
+        	if (player.getX() > 0) {
+        		player.moveLeft();
+        	}
         }
         if (input.contains("RIGHT")) {
-        	player.moveRight();
+        	if (player.getX() < appWidth - player.getWidth()) {
+            	player.moveRight();
+        	}
         }
         // laser firing
         if (input.contains("SPACE")) {
