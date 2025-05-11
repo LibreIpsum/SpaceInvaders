@@ -24,19 +24,37 @@ public class Main extends Application {
 	int cooldownFrame = 0;
 	ArrayList<Laser> playerLasers = new ArrayList<Laser>();
 	
+	ArrayList<Enemy> enemies = new ArrayList<Enemy>();
+	int enemySpeed = 1;
+	
 	@Override
 	public void start(Stage stage) {
 		try {
 			// main group and scene
 			Group root = new Group();
-			Scene scene = new Scene(root, 800, 800, Color.BLACK);
+			Scene scene = new Scene(root, 800, 800, Color.rgb(0, 0,	15));
 			
 			
 			// create a player ship
 			Player player = new Player(scene.getWidth()/2, scene.getHeight()-100);		
 			root.getChildren().add(player);
 			
-
+			
+			// create enemies
+			Group enemyBox = new Group();
+			root.getChildren().add(enemyBox);
+			enemyBox.setTranslateX(60);
+			enemyBox.setTranslateY(60);
+			
+			for (int h=0; h<5; h++) {
+				for (int w=0; w<11; w++) {
+					Enemy enemy = new Enemy(w*50, h*50, 1); 	
+					enemies.add(enemy);
+					enemyBox.getChildren().add(enemy);
+//					System.out.println(h + ", " + w);
+				}
+			}
+			
 			// event handling
 			scene.setOnKeyPressed(event -> handleKeyPress(event));
 			scene.setOnKeyReleased(event -> handleKeyReleased(event));
@@ -46,7 +64,7 @@ public class Main extends Application {
 			stage.setScene(scene);
 			stage.show();
 			
-			initializeGameLoop(root, player, playerLasers);
+			initializeGameLoop(root, player, playerLasers, enemyBox, enemies);
 			
 		} catch(Exception e) {
 			e.printStackTrace();
@@ -55,12 +73,12 @@ public class Main extends Application {
 	
 	
 
-	private void initializeGameLoop(Group root, Player player, ArrayList<Laser> lasers) {
+	private void initializeGameLoop(Group root, Player player, ArrayList<Laser> lasers, Group enemyBox, ArrayList<Enemy> enemies) {
         // Set up the game loop with 60 FPS (16.67 milliseconds per frame)
         Duration frameDuration = Duration.millis(16.67);
         KeyFrame gameFrame = new KeyFrame(frameDuration, event -> {
 			try {
-				updateGame(root, player, lasers);
+				updateGame(root, player, lasers, enemyBox, enemies);
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -73,7 +91,7 @@ public class Main extends Application {
         gameLoop.play();
     }
 
-    private void updateGame(Group root, Player player, ArrayList<Laser> lasers) throws FileNotFoundException {
+    private void updateGame(Group root, Player player, ArrayList<Laser> lasers, Group enemyBox, ArrayList<Enemy> enemies) throws FileNotFoundException {
         // counters
     	cooldownFrame-=1;
     	
@@ -106,7 +124,21 @@ public class Main extends Application {
         		root.getChildren().remove(laser);
         	}
         }
+        
+        
+     // Enemy movement
+        enemyBox.setTranslateX(enemyBox.getTranslateX() + enemySpeed);
+        if ((enemyBox.getTranslateX() < 0) || (enemyBox.getTranslateX() + enemyBox.getBoundsInLocal().getWidth() > 800)) {
+        	enemySpeed *= -1;
+        }
+        
+        Enemy testEnemy = enemies.get(0);
+        System.out.println(testEnemy.localToScene(testEnemy.getX(), testEnemy.getY()).getX());
     }
+    
+    
+    
+    
     
     // event handler functions
     private void handleKeyPress(KeyEvent event) {
