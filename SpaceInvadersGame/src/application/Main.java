@@ -3,6 +3,7 @@ package application;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Random;
 
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -22,16 +23,23 @@ public class Main extends Application {
 	
 	ArrayList<String> input = new ArrayList<String>();
 	
+	
+	ArrayList<Laser> playerLasers = new ArrayList<Laser>();
 	int laserCooldown = 30;
 	int cooldownFrame = 0;
-	ArrayList<Laser> playerLasers = new ArrayList<Laser>();
+	
 	
 	ArrayList<Enemy> enemies = new ArrayList<Enemy>();
 	int enemySpeed = 1;
 	int currentEnemyStep = 1;
 	int enemySteps = appWidth / enemySpeed;
 	int enemyPad = 50;
-	int enemyWidth = 0;
+	int enemyBoxWidth = 0;
+	
+	
+	ArrayList<Laser> enemyLasers = new ArrayList<Laser>();
+	int EnemyPercentFireRate = 2;
+//	int cooldownFrame = 0;
 	
 	@Override
 	public void start(Stage stage) {
@@ -54,9 +62,9 @@ public class Main extends Application {
 //					enemyBox.getChildren().add(enemy);
 					root.getChildren().add(enemy);
 				}
-				enemyWidth += enemyPad;
+				enemyBoxWidth += enemyPad;
 			}
-			enemySteps -= enemyWidth;
+			enemySteps -= enemyBoxWidth;
 			
 			// event handling
 			scene.setOnKeyPressed(event -> handleKeyPress(event));
@@ -76,14 +84,14 @@ public class Main extends Application {
 	
 	
 
-	private void initializeGameLoop(Group root, Player player, ArrayList<Laser> lasers, ArrayList<Enemy> enemies) {
+	private void initializeGameLoop(Group root, Player player, ArrayList<Laser> playaerLasers, ArrayList<Enemy> enemies) {
         // Set up the game loop with 60 FPS (16.67 milliseconds per frame)
         Duration frameDuration = Duration.millis(16.67);
         KeyFrame gameFrame = new KeyFrame(frameDuration, event -> {
 			try {
-				updateGame(root, player, lasers, enemies);
+				updateGame(root, player, playaerLasers, enemies);
 			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
+				System.out.println(e.getMessage());
 				e.printStackTrace();
 			}
 		});
@@ -93,8 +101,10 @@ public class Main extends Application {
         // Start the game loop
         gameLoop.play();
     }
+	
+	
 
-    private void updateGame(Group root, Player player, ArrayList<Laser> lasers, ArrayList<Enemy> enemies) throws FileNotFoundException {
+    private void updateGame(Group root, Player player, ArrayList<Laser> playerLasers, ArrayList<Enemy> enemies) throws FileNotFoundException {
         // counters
     	cooldownFrame-=1;
     	
@@ -108,9 +118,10 @@ public class Main extends Application {
         }
         // laser firing
         if (input.contains("SPACE")) {
+        	// only allow firing once every 30 frames
         	if (cooldownFrame <= 0) {
         		Laser laser = new Laser(player.getX() + (player.getWidth()/2)-5, player.getY(), 10);
-    			lasers.add(laser);
+    			playerLasers.add(laser);
     			root.getChildren().add(laser);
     			cooldownFrame = laserCooldown;
         	}
@@ -119,11 +130,21 @@ public class Main extends Application {
         
         
         // Laser movement
-        for (int i=0;i<lasers.size();i++) {
-        	Laser laser = lasers.get(i);
+        for (int i=0;i<playerLasers.size();i++) {
+        	Laser laser = playerLasers.get(i);
         	laser.update();
         	if (laser.getY() < -20) {
-        		lasers.remove(i);
+        		playerLasers.remove(i);
+        		root.getChildren().remove(laser);
+        	}
+        	
+        	
+        }
+        for (int i=0;i<enemyLasers.size();i++) {
+        	Laser laser = enemyLasers.get(i);
+        	laser.update();
+        	if (laser.getY() > appWidth + 20) {
+        		enemyLasers.remove(i);
         		root.getChildren().remove(laser);
         	}
         	
@@ -135,11 +156,12 @@ public class Main extends Application {
         for (int i=0; i<enemies.size(); i++){
         	Enemy enemy = enemies.get(i);
         	enemy.setX(enemy.getX() + enemySpeed);
-        	for (int j=0; j<lasers.size();j++) {
-        		Laser laser = lasers.get(j);
+        	
+        	// Enemy collisions with lasers
+        	for (int j=0; j<playerLasers.size();j++) {
+        		Laser laser = playerLasers.get(j);
         		if (laser.getBoundsInParent().intersects(enemy.getBoundsInParent())) {
-        			System.out.println("collision" + i + ", " + j);
-        			lasers.remove(j);
+        			playerLasers.remove(j);
         			root.getChildren().remove(laser);
         			enemies.remove(i);
         			root.getChildren().remove(enemy);
@@ -151,8 +173,34 @@ public class Main extends Application {
     		enemySpeed *= -1;
     		currentEnemyStep = 1;
     	}
+        
+        
+        
+        
+        // Enemy firing
+        if (Math.random()*100 < EnemyPercentFireRate) {
+        	
+        	int firingEnemyIndex = (int)(Math.random()*enemies.size());
+        	Enemy firingEnemy = enemies.get(firingEnemyIndex);
+        	
+        	Laser newLaser = new Laser(firingEnemy.getX() + (firingEnemy.getWidth()/2)-5, firingEnemy.getY(), -10);
+        	enemyLasers.add(newLaser);
+        	root.getChildren().add(newLaser);
+        }
+        
+        // Enemy laser collision with player
+        for (int j=0; j<enemyLasers.size();j++) {
+    		Laser laser = enemyLasers.get(j);
+    		if (laser.getBoundsInParent().intersects(player.getBoundsInParent())) {
+    			enemyLasers.remove(j);
+    			root.getChildren().remove(laser);
+    			root.getChildren().remove(player);
+    		}
+    	}
+        
+        
     }
-    
+
     
     
     
