@@ -15,7 +15,7 @@ public class Laser extends ImageView {
 		this.speed = speed;
 		setX(startX);
 		setY(startY);
-		setFitWidth(30);
+		setFitWidth(10);
 		setPreserveRatio(true);
 	}
 	
